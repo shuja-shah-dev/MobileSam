@@ -3,7 +3,7 @@ import logging
 import torch
 import cv2
 import numpy as np
-
+from pathlib import Path
 from typing import List, Dict, Optional
 from label_studio_ml.utils import get_image_local_path, InMemoryLRUDictCache
 
@@ -86,31 +86,41 @@ class SAMPredictor(object):
             #    label_studio_host=LABEL_STUDIO_HOST
             #)
             print("*********************************")
-            print("image path is " ,img_path)
-            #print(image_path)
-            img_path_new = img_path.split('upload')[-1]
-            print("New path is " ,img_path_new)
-            current_directory_path = os.getcwd()
+            print("image path is ", img_path)
+
+            img_path_parts = img_path.split('upload')
+            if len(img_path_parts) < 2:
+                print("Error: 'upload' directory not found in the given path.")
+                exit()
+
+            img_path_new = img_path_parts[-1]
+            print("New path is ", img_path_new)
+
+            current_directory_path = Path.cwd()
             print("Current is ", current_directory_path)
-            index = current_directory_path.find('\\label-studio-ml-backend\\')
 
-            if index != -1:
-                result_path = current_directory_path[:index]
+            label_studio_index = str(current_directory_path).find('label_studio')
+
+            if label_studio_index != -1:
+                
+                result_path = str(current_directory_path)[:label_studio_index + len('label_studio')]
+                print("Result path is *****************************", result_path)
+
+                full_paths = Path(result_path) / 'core' / 'metaDeta' / 'media' / 'upload'
+                print("Full Paths:", full_paths)
+
+                full_path = full_paths / img_path_new.lstrip('/')
+                print("Full Path:", full_path)
+
+                if full_path.exists():
+                    print("Updated *********************************************")
+                else:
+                    print("Error: The full path does not exist.")
             else:
-                print("Subpath not found in the given path.")
-            print("Result path is *****************************", result_path)
-            from pathlib import Path
-            img_paths_updated= Path(img_path_new)
-            result_paths = Path(result_path)
+                print("Subpath 'label_studio' not found in the given path.")
 
-            full_paths = result_paths / 'core' / 'metaDeta' / 'media' / 'upload'
-
-            print("full_paths:", full_paths)
-            print("img_path:", img_paths_updated)
-            print("Updated *********************************************")
-
-            full_path = full_paths.joinpath(img_paths_updated.relative_to('/'))
-            print("Resulting full_path:", full_path)
+            #full_path = full_paths.joinpath(img_paths_updated.relative_to('/'))
+            #print("Resulting full_path:", full_path)
             full_path_str = str(full_path)
             image = cv2.imread(full_path_str)
             
